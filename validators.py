@@ -7,6 +7,7 @@ SECURITY_HEADERS = [
     "Permissions-Policy"
 ]
 
+
 # checking and gathering the missing headers
 def check_missing_security_headers(response):
     missing_headers = []
@@ -26,15 +27,33 @@ def validate_x_frame_options(value):
     pass
 
 def validate_x_content_type_options(value):
-    pass
+    if value.strip().lower() != "nosniff":
+        return 'Expected value: "nosniff"'
+    return None
 
 def validate_hsts(value):
     pass
 
 
+HEADER_VALIDATORS = {
+    "Content-Security-Policy": validate_csp,
+    "Strict-Transport-Security": None,
+    "X-Frame-Options": validate_x_frame_options,
+    "X-Content-Type-Options": validate_x_content_type_options,
+    "Referrer-Policy": None,
+    "Permissions-Policy": None
+}
 
 def validate_security_headers(response):
     misconfigured_headers = []
+
+    for header_name, validator in HEADER_VALIDATORS.items():
+        header_value = response.headers.get(header_name)
+
+        if header_name is None:
+            continue
+
+        # h ypoloipi logikh edw
 
 
     return misconfigured_headers

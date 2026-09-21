@@ -80,15 +80,18 @@ def main():
     if response is None:
         sys.exit(1)
 
-    if (args.verbose >= 1):
-        print_response_info(response)
 
-    missing_headers = check_missing_security_headers(response)
-    misconfigured_headers = validate_security_headers(response)
-    # prepei na omadopoihsw ta print kai na ta valw se 1 function, kapws etsi dld:
-    # print_security_headers_results(missing_headers, misconfigured_headers)
-    print('\n')
-    print_security_headers_results(missing_headers)
+    print(f'response headers: {response.headers}')
+
+    # if (args.verbose >= 1):
+    #     print_response_info(response)
+
+    # missing_headers = check_missing_security_headers(response)
+    # misconfigured_headers = validate_security_headers(response)
+    # # prepei na omadopoihsw ta print kai na ta valw se 1 function, kapws etsi dld:
+    # # print_security_headers_results(missing_headers, misconfigured_headers)
+    # print('\n')
+    # print_security_headers_results(missing_headers)
 
 if __name__ == "__main__":
     main()
