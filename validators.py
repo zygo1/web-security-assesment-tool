@@ -19,6 +19,20 @@ def check_missing_security_headers(response):
 
     return missing_headers
 
+def validate_csp(value):
+    pass
+
+def validate_x_frame_options(value):
+    pass
+
+def validate_x_content_type_options(value):
+    pass
+
+def validate_hsts(value):
+    pass
+
+
+
 def validate_security_headers(response):
     misconfigured_headers = []
 
