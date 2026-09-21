@@ -1,39 +1,13 @@
 import argparse
 import sys
 import requests
+from validators import check_missing_security_headers, validate_security_headers
 
 BROWSER_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/153.0.0.0 Safari/537.36"
 )
-
-SECURITY_HEADERS = [
-    "Content-Security-Policy",
-    "Strict-Transport-Security",
-    "X-Frame-Options",
-    "X-Content-Type-Options",
-    "Referrer-Policy",
-    "Permissions-Policy"
-]
-
-# checking and gathering the missing headers
-def check_missing_security_headers(response):
-    missing_headers = []
-
-    for header_name in SECURITY_HEADERS:
-        header_value = response.headers.get(header_name)
-
-        if header_value is None:
-            missing_headers.append(header_name)
-
-    return missing_headers
-
-def validate_security_headers(response):
-    misconfigured_headers = []
-
-
-    return misconfigured_headers
 
 # printing the results of check_security_headers
 def print_security_headers_results(missing_headers):
@@ -46,7 +20,6 @@ def print_security_headers_results(missing_headers):
             print(f' - {header_name}')
     else:
         print('No security headers are missing')
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Assess the security configuration of a web application.')
@@ -107,10 +80,8 @@ def main():
     if response is None:
         sys.exit(1)
 
-    
     if (args.verbose >= 1):
         print_response_info(response)
-
 
     missing_headers = check_missing_security_headers(response)
     misconfigured_headers = validate_security_headers(response)
