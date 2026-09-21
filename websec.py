@@ -8,6 +8,46 @@ BROWSER_USER_AGENT = (
     "Chrome/153.0.0.0 Safari/537.36"
 )
 
+SECURITY_HEADERS = [
+    "Content-Security-Policy",
+    "Strict-Transport-Security",
+    "X-Frame-Options",
+    "X-Content-Type-Options",
+    "Referrer-Policy",
+    "Permissions-Policy"
+]
+
+# checking and gathering the missing headers
+def check_missing_security_headers(response):
+    missing_headers = []
+
+    for header_name in SECURITY_HEADERS:
+        header_value = response.headers.get(header_name)
+
+        if header_value is None:
+            missing_headers.append(header_name)
+
+    return missing_headers
+
+def validate_security_headers(response):
+    misconfigured_headers = []
+
+
+    return misconfigured_headers
+
+# printing the results of check_security_headers
+def print_security_headers_results(missing_headers):
+    print(f'Security headers check:')
+    
+    if missing_headers:
+        print("Missing Headers:")
+
+        for header_name in missing_headers:
+            print(f' - {header_name}')
+    else:
+        print('No security headers are missing')
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Assess the security configuration of a web application.')
 
@@ -16,9 +56,11 @@ def parse_arguments():
             'Set a custom User-Agent. Use "default" for a browser-like '
             'User-Agent. If omitted, Requests uses its own User-Agent.'
         ),)
+    parser.add_argument('-v','--verbose', action="count", default=0)
 
     return parser.parse_args()
 
+# for now i just add the user-agent in the request headers
 def build_request_headers(user_agent):
     if user_agent is None:
         return None
@@ -45,6 +87,7 @@ def fetch_response(url, headers=None):
     return None    
 
 
+#print the results from fetch_response
 def print_response_info(response):
     print(f'Requested URL: {response.request.url}')
     print(f'Final URL {response.url}')
@@ -64,8 +107,17 @@ def main():
     if response is None:
         sys.exit(1)
 
-    print_response_info(response)
+    
+    if (args.verbose >= 1):
+        print_response_info(response)
 
+
+    missing_headers = check_missing_security_headers(response)
+    misconfigured_headers = validate_security_headers(response)
+    # prepei na omadopoihsw ta print kai na ta valw se 1 function, kapws etsi dld:
+    # print_security_headers_results(missing_headers, misconfigured_headers)
+    print('\n')
+    print_security_headers_results(missing_headers)
 
 if __name__ == "__main__":
     main()
