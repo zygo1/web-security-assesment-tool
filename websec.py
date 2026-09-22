@@ -81,8 +81,6 @@ def main():
         sys.exit(1)
 
 
-    print(f'response headers: {response.headers}')
-
     if (args.verbose >= 1):
         print_response_info(response)
 
@@ -95,3 +93,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
