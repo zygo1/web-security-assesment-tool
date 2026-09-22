@@ -116,24 +116,27 @@ def validate_x_frame_options(value):
     normalized_value = value.strip().upper()
 
     if normalized_value.startswith('ALLOW-FROM'):
-        return (
+        return [
             'The "ALLOW-FROM" directive is obsolete and is not supported '
             'by modern browsers. Use "DENY" or "SAMEORIGIN", or configure '
             'the CSP frame-ancestors directive.'
-        )
+        ]
     
     if normalized_value not in {'DENY', 'SAMEORIGIN'}:
-        return (
+        return [
             f'Invalid X-Frame-Options value: "{value}". '
             'Expected "DENY" or "SAMEORIGIN".'
-        )
+        ]
     
-    return None
+    return []
  
 def validate_x_content_type_options(value):
     if value.strip().lower() != "nosniff":
-        return 'Expected value: "nosniff"'
-    return None
+         return [
+            f'Invalid X-Content-Type-Options value: "{value}". '
+            'Expected "nosniff".'
+        ]
+    return []
 
 def validate_hsts(value):
     pass
@@ -141,23 +144,32 @@ def validate_hsts(value):
 
 HEADER_VALIDATORS = {
     "Content-Security-Policy": validate_csp,
-    "Strict-Transport-Security": None,
+    # "Strict-Transport-Security": None,
     "X-Frame-Options": validate_x_frame_options,
     "X-Content-Type-Options": validate_x_content_type_options,
-    "Referrer-Policy": None,
-    "Permissions-Policy": None
+    # "Referrer-Policy": None,
+    # "Permissions-Policy": None
 }
 
 def validate_security_headers(response):
-    misconfigured_headers = []
+    misconfigured_headers = {}
 
     for header_name, validator in HEADER_VALIDATORS.items():
         header_value = response.headers.get(header_name)
 
-        if header_name is None:
+        if header_value is None:
             continue
 
-        # h ypoloipi logikh edw
-        validator(header_value)
+        findings = validator(header_value)
+
+        if findings:
+            if (header_name) not in misconfigured_headers:
+                misconfigured_headers[header_name]= {
+                    "value": header_value,
+                    "findings": []
+                }
+
+            for finding in findings:
+                misconfigured_headers[header_name]['findings'].append(finding)
 
     return misconfigured_headers
