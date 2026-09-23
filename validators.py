@@ -1,3 +1,5 @@
+import re
+
 SECURITY_HEADERS = [
     "Content-Security-Policy",
     "Strict-Transport-Security",
@@ -20,18 +22,6 @@ def check_missing_security_headers(response):
 
     return missing_headers
 
-    # Content-Security-Policy: default-src 'self';
-    #  script-src 'self' 'unsafe-inline' https://cdn.example.com;
-    #  style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; object-src 'none'; frame-ancestors 'self'
-        
-
-        # ta directives einai key value pairs dld:
-    #           directives = {
-    #               "default-src": ["'self'"],
-    #               "script-src": ["'self'", "'unsafe-inline'"],
-    #               "base-uri": ["'none'"],
-    #           }
-
 def get_sources(directives, directive_name):
     if directive_name in directives:
         return directives[directive_name]
@@ -40,6 +30,61 @@ def get_sources(directives, directive_name):
         return directives['default-src']
     
     return None
+
+def validate_hsts(value):
+    findings = []
+
+    directives = {}
+
+    for directive in value.split(';'):
+        part = directive.strip().lower()
+
+        if not part:
+            continue
+
+        if "=" in part:
+            parts = part.split('=')
+            directive_name = parts[0]
+            directive_value = parts[1]
+            directives[directive_name] = directive_value
+        else:
+            directives[part] = None
+
+    if 'max-age' not in directives:
+        findings.append( 'The HSTS policy does not define the required "max-age" directive.')
+        return findings
+
+    max_age_value = directives['max-age']
+
+
+    #max-age must contain only digits
+    if not re.fullmatch(r"[0-9]+", max_age_value):
+        findings.append( f'Invalid HSTS max-age value: "{max_age_value}". '
+            "Expected a non-negative integer representing seconds.")
+        return findings
+
+    max_age = int(max_age_value)
+
+    if max_age == 0:
+        findings.append('The HSTS max-age is set to 0, which disables the HSTS policy.')
+
+    if 'includesubdomains' not in directives:
+        findings.append('The HSTS policy does not include "includeSubDomains". '
+              'Note, that this is optional if not "preload is present. "'
+                "Subdomains are not covered by this policy.")
+
+    #extra requirements when preload is requested.
+    if 'preload' in directives:
+        if (max_age < 31536000):
+            findings.append("The HSTS policy requests preloading, but max-age is less "
+                "than 31536000 seconds (one year).")
+
+        if "includesubdomains" not in directives:
+            findings.append(
+                'The HSTS policy requests preloading but does not include '
+                'the required "includeSubDomains" directive.'
+            )
+    return findings
 
 def validate_csp(value):
     findings = []
@@ -69,7 +114,7 @@ def validate_csp(value):
         for source in script_sources:
             lowercase_source = source.lower()
             normalized_sources.add(lowercase_source)
-        #script sources dld: 'self','unsafe-inline' 'https...' ktlp
+        #script sources: 'self','unsafe-inline' 'https...' ktlp
 
         if "'unsafe-inline'" in normalized_sources:
             findings.append('The script policy contains "\'unsafe-inline\'", which may '
@@ -138,17 +183,64 @@ def validate_x_content_type_options(value):
         ]
     return []
 
-def validate_hsts(value):
-    pass
+VALID_REFERRER_HEADERS = [
+    'no-referrer',
+    'no-referrer-when-downgrade',
+    'origin',
+    'origin-when-cross-origin',
+    'same-origin',
+    'strict-origin',
+    'strict-origin-when-cross-origin',
+    'unsafe-url'
+]
+
+PERMISSIVE_REFERRER_POLICIES = {
+    "unsafe-url",
+    "no-referrer-when-downgrade",
+    "origin",
+    "origin-when-cross-origin",
+}
+
+def validate_referrer_policy(value):
+    findings = []
+    policies = []
+
+    for policy in value.split(','):
+        normalized_value = policy.strip().lower()
+
+        if normalized_value:
+            policies.append(normalized_value)
+
+    recognized_polices = []
+
+    for policy in policies:
+        if policy in VALID_REFERRER_HEADERS:
+            recognized_polices.append(policy)
+
+    if not recognized_polices:
+        findings.append(f'Invalid Referrer-Policy value: "{value}". '
+            "No recognized policy was found.")
+
+        return findings
+
+    effective_policy = recognized_polices[-1]
+    print('effective: ', effective_policy)
+
+    if effective_policy in PERMISSIVE_REFERRER_POLICIES:
+        findings.append(f'The effective Referrer-Policy "{effective_policy}" may '
+                        'disclose more referrer information that necessary. Consider '
+                        '"strict-origin-when-cross-origin", "strict-origin", '
+                        '"same-origin", or "no-referrer".')
+
+    return findings
 
 
 HEADER_VALIDATORS = {
     "Content-Security-Policy": validate_csp,
-    # "Strict-Transport-Security": None,
+    "Strict-Transport-Security": validate_hsts,
     "X-Frame-Options": validate_x_frame_options,
     "X-Content-Type-Options": validate_x_content_type_options,
-    # "Referrer-Policy": None,
-    # "Permissions-Policy": None
+    "Referrer-Policy": validate_referrer_policy,
 }
 
 def validate_security_headers(response):
@@ -163,7 +255,7 @@ def validate_security_headers(response):
         findings = validator(header_value)
 
         if findings:
-            if (header_name) not in misconfigured_headers:
+            if header_name not in misconfigured_headers:
                 misconfigured_headers[header_name]= {
                     "value": header_value,
                     "findings": []
