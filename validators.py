@@ -57,7 +57,7 @@ def validate_hsts(value):
     max_age_value = directives['max-age']
 
 
-    #max-age must contain only digits
+    #check if max-age contain only digits
     if not re.fullmatch(r"[0-9]+", max_age_value):
         findings.append( f'Invalid HSTS max-age value: "{max_age_value}". '
             "Expected a non-negative integer representing seconds.")

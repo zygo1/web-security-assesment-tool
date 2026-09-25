@@ -14,8 +14,12 @@ def parse_arguments():
 
     parser.add_argument('url',help='The target URL, e.g. https://example.com')
     parser.add_argument('-A','--user-agent',type=str, help=(
-            'Set a custom User-Agent. Use "default" for a browser-like '
+            'Set a custom User-Agent. Use "default-browser" for a browser-like '
             'User-Agent. If omitted, Requests uses its own User-Agent.'
+            'default-browser user agent is: '
+            "Mozilla/5.0 (X11; Linux x86_64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/153.0.0.0 Safari/537.36"
         ),)
     parser.add_argument('-v','--verbose', action="count", default=0)
 
@@ -25,7 +29,7 @@ def parse_arguments():
 def build_request_headers(user_agent):
     if user_agent is None:
         return None
-    if user_agent.lower() == "default":
+    if user_agent.lower() == "default-browser":
         user_agent = BROWSER_USER_AGENT
 
     return {
