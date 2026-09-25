@@ -10,7 +10,6 @@ SECURITY_HEADERS = [
 ]
 
 
-# checking and gathering the missing headers
 def check_missing_security_headers(response):
     missing_headers = []
 
@@ -57,7 +56,6 @@ def validate_hsts(value):
     max_age_value = directives['max-age']
 
 
-    #max-age must contain only digits
     if not re.fullmatch(r"[0-9]+", max_age_value):
         findings.append( f'Invalid HSTS max-age value: "{max_age_value}". '
             "Expected a non-negative integer representing seconds.")
@@ -73,7 +71,6 @@ def validate_hsts(value):
               'Note, that this is optional if not "preload is present. "'
                 "Subdomains are not covered by this policy.")
 
-    #extra requirements when preload is requested.
     if 'preload' in directives:
         if (max_age < 31536000):
             findings.append("The HSTS policy requests preloading, but max-age is less "
@@ -114,7 +111,6 @@ def validate_csp(value):
         for source in script_sources:
             lowercase_source = source.lower()
             normalized_sources.add(lowercase_source)
-        #script sources: 'self','unsafe-inline' 'https...' ktlp
 
         if "'unsafe-inline'" in normalized_sources:
             findings.append('The script policy contains "\'unsafe-inline\'", which may '
